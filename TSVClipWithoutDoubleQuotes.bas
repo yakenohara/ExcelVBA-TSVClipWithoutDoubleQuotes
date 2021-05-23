@@ -32,11 +32,14 @@ Sub TSVClipWithoutDoubleQuotes()
     Dim isFirstCol As Boolean
     Dim buf As String
     
+    'シート範囲全選択されていた場合は、UsedRange内に収まるようにトリミング
+    Set range_selection = trimWithUsedRange(Selection)
+    
     '初期化
-    startOfRow = Selection.Row
-    lastOfRow = startOfRow + Selection.Rows.Count - 1
-    startOfCol = Selection.Column
-    lastOfCol = startOfCol + Selection.Columns.Count - 1
+    startOfRow = range_selection.Row
+    lastOfRow = startOfRow + range_selection.Rows.Count - 1
+    startOfCol = range_selection.Column
+    lastOfCol = startOfCol + range_selection.Columns.Count - 1
     buf = ""
     
     '文字列取り込みループ
@@ -79,6 +82,42 @@ Sub TSVClipWithoutDoubleQuotes()
     SetCB buf
 
 End Sub
+
+'
+' セル参照範囲が UsedRange 範囲に収まるようにトリミングする
+'
+Private Function trimWithUsedRange(ByVal rangeObj As Range) As Range
+
+    'variables
+    Dim ret As Range
+    Dim long_bottom_right_row_idx_of_specified As Long
+    Dim long_bottom_right_col_idx_of_specified As Long
+    Dim long_bottom_right_row_idx_of_used As Long
+    Dim long_bottom_right_col_idx_of_used As Long
+
+    '指定範囲の右下位置の取得
+    long_bottom_right_row_idx_of_specified = rangeObj.Item(1).Row + rangeObj.Rows.Count - 1
+    long_bottom_right_col_idx_of_specified = rangeObj.Item(1).Column + rangeObj.Columns.Count - 1
+    
+    'UsedRangeの右下位置の取得
+    With rangeObj.Parent.UsedRange
+        long_bottom_right_row_idx_of_used = .Item(1).Row + .Rows.Count - 1
+        long_bottom_right_col_idx_of_used = .Item(1).Column + .Columns.Count - 1
+    End With
+    
+    'トリミング
+    Set ret = rangeObj.Parent.Range( _
+        rangeObj.Item(1), _
+        rangeObj.Parent.Cells( _
+            IIf(long_bottom_right_row_idx_of_specified > long_bottom_right_row_idx_of_used, long_bottom_right_row_idx_of_used, long_bottom_right_row_idx_of_specified), _
+            IIf(long_bottom_right_col_idx_of_specified > long_bottom_right_col_idx_of_used, long_bottom_right_col_idx_of_used, long_bottom_right_col_idx_of_specified) _
+        ) _
+    )
+    
+    '格納して終了
+    Set trimWithUsedRange = ret
+    
+End Function
 
 '<クリップボード操作>-------------------------------------------
 
